@@ -2,7 +2,7 @@ use std::io::{self, BufRead,BufReader};
 use std::fs::File;
 use std::collections::HashMap;
 use clap::Parser;
-use unicode_segmentation::UnicodeSegmentation;
+//use unicode_segmentation::UnicodeSegmentation;
 
 #[derive(Parser, Debug)]
 struct Cli {
@@ -27,7 +27,7 @@ fn main() -> io::Result<()>{
     let _default_option: bool = !args.bytes && !args.lines 
         && !args.multibytes && !args.words;
 
-    let mut counts: HashMap<&str, u32> = HashMap::new();
+    let mut counts: HashMap<&str, u64> = HashMap::new();
     counts.insert("bytes", 0);
     counts.insert("words", 0);
     counts.insert("lines", 0);
@@ -38,14 +38,14 @@ fn main() -> io::Result<()>{
 
         // Count number of bytes per line
         // Add 1 at the end to account for newline
-        let byte_length: u32 = line_string.len() as u32;
+        let byte_length: u64 = line_string.len() as u64;
         counts.entry("bytes").and_modify(|k| *k += byte_length + 1);
 
         // Count number of words per line
-        let words: Vec<&str> = line_string.split(" ").collect();
+        let words: Vec<&str> = line_string.split_whitespace().collect();
         let filtered_words: Vec<&str> = words.into_iter()
             .filter(|word| word.len() > 0).collect();
-        let word_count = filtered_words.len() as u32;
+        let word_count: u64 = filtered_words.len() as u64;
         counts.entry("words").and_modify(|k| *k += word_count);
 
         // Increase line count per iteration
@@ -53,7 +53,7 @@ fn main() -> io::Result<()>{
 
         // Count number of multibyte characters per line
         // Add 1 at the end to account for newline
-        let multi_count: u32 = line_string.graphemes(true).count() as u32;
+        let multi_count: u64 = line_string.chars().count() as u64;
         counts.entry("multibytes").and_modify(|k| *k += multi_count + 1);
     }
 
