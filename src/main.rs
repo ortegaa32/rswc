@@ -21,7 +21,7 @@ fn main() -> io::Result<()>{
     let args = Cli::parse();
 
     let file = File::open(&args.path)?;
-    let reader = BufReader::new(file);
+    let mut reader = BufReader::new(file);
 
     // Indicates if user entered command with no flags
     let _default_option: bool = !args.bytes && !args.lines 
@@ -32,14 +32,14 @@ fn main() -> io::Result<()>{
     counts.insert("words", 0);
     counts.insert("lines", 0);
     counts.insert("multibytes", 0);
+    
+    let mut line_string = String::new();
 
-    for line in reader.lines() {
-        let line_string = line.unwrap();
+    while reader.read_line(&mut line_string).unwrap() > 0 {
 
         // Count number of bytes per line
-        // Add 1 at the end to account for newline
         let byte_length: u64 = line_string.len() as u64;
-        counts.entry("bytes").and_modify(|k| *k += byte_length + 1);
+        counts.entry("bytes").and_modify(|k| *k += byte_length);
 
         // Count number of words per line
         let words: Vec<&str> = line_string.split_whitespace().collect();
@@ -52,9 +52,10 @@ fn main() -> io::Result<()>{
         counts.entry("lines").and_modify(|k| *k += 1);
 
         // Count number of multibyte characters per line
-        // Add 1 at the end to account for newline
         let multi_count: u64 = line_string.chars().count() as u64;
-        counts.entry("multibytes").and_modify(|k| *k += multi_count + 1);
+        counts.entry("multibytes").and_modify(|k| *k += multi_count);
+
+        line_string.clear();
     }
 
     println!("Byte count: {}", counts["bytes"]);
