@@ -24,7 +24,7 @@ fn main() -> io::Result<()>{
     let mut reader = BufReader::new(file);
 
     // Indicates if user entered command with no flags
-    let _default_option: bool = !args.bytes && !args.lines 
+    let default_option: bool = !args.bytes && !args.lines 
         && !args.multibytes && !args.words;
 
     let mut counts: HashMap<&str, u64> = HashMap::new();
@@ -58,9 +58,31 @@ fn main() -> io::Result<()>{
         line_string.clear();
     }
 
-    println!("Byte count: {}", counts["bytes"]);
-    println!("Word count: {}", counts["words"]);
-    println!("Line count: {}", counts["lines"]);
-    println!("Multi count: {}", counts["multibytes"]);
+    let mut report = String::new();
+
+    if default_option || args.lines {
+        report.push_str(&format!("{:>8}", counts["lines"]));
+    }
+    
+    if default_option || args.words {
+        report.push_str(&format!("{:>8}", counts["words"]));
+    }
+
+    if default_option || args.bytes {
+        report.push_str(&format!("{:>8}", counts["bytes"]));
+    }
+
+    if args.multibytes && !args.bytes {
+        report.push_str(&format!("{:>8}", counts["multibytes"]));
+    }
+
+    report.push_str(&format!(" {}", args.path.display()));
+
+    println!("{}", report);
+
+    //println!("Byte count: {}", counts["bytes"]);
+    //println!("Word count: {}", counts["words"]);
+    //println!("Line count: {}", counts["lines"]);
+    //println!("Multi count: {}", counts["multibytes"]);
     Ok(())
 }
