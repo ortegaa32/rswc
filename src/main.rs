@@ -23,16 +23,20 @@ fn main() -> io::Result<()>{
     let file = File::open(&args.path)?;
     let mut reader = BufReader::new(file);
 
-    // Indicates if user entered command with no flags
-    let default_option: bool = !args.bytes && !args.lines 
-        && !args.multibytes && !args.words;
-
     let mut counts: HashMap<&str, u64> = HashMap::new();
     counts.insert("bytes", 0);
     counts.insert("words", 0);
     counts.insert("lines", 0);
     counts.insert("multibytes", 0);
     
+    get_counts(&mut counts, &mut reader);
+
+    print_report(args, counts);
+
+    Ok(())
+}
+
+fn get_counts(counts: &mut HashMap<&str, u64>, reader: &mut BufReader<File>) {
     let mut line_string = String::new();
 
     while reader.read_line(&mut line_string).unwrap() > 0 {
@@ -57,6 +61,13 @@ fn main() -> io::Result<()>{
 
         line_string.clear();
     }
+}
+
+// Function to print results of command
+fn print_report(args: Cli, counts: HashMap<&str, u64>) {
+    // Indicates if user entered command with no flags
+    let default_option: bool = !(args.bytes || args.lines || args.words 
+        || args.multibytes);
 
     let mut report = String::new();
 
@@ -79,10 +90,4 @@ fn main() -> io::Result<()>{
     report.push_str(&format!(" {}", args.path.display()));
 
     println!("{}", report);
-
-    //println!("Byte count: {}", counts["bytes"]);
-    //println!("Word count: {}", counts["words"]);
-    //println!("Line count: {}", counts["lines"]);
-    //println!("Multi count: {}", counts["multibytes"]);
-    Ok(())
 }
