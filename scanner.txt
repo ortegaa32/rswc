@@ -1,0 +1,17 @@
+The first step in any compiler or interpreter is scanning. The 
+scanner takes in raw source code as a series of characters and 
+groups it into a series of chunks we call tokens. These are the 
+meaningful “words” and “punctuation” that make up the language’s 
+grammar.
+
+This task has been variously called “scanning” and “lexing” (short 
+for “lexical analysis”) over the years. Way back when computers 
+were as big as Winnebagos but had less memory than your watch, some 
+people used “scanner” only to refer to the piece of code that dealt 
+with reading raw source code characters from disk and buffering them 
+in memory. Then “lexing” was the subsequent phase that did useful 
+stuff with the characters.
+
+These days, reading a source file into memory is trivial, so it’s 
+rarely a distinct phase in the compiler. Because of that, the two 
+terms are basically interchangeable.

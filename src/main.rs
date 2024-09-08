@@ -1,8 +1,8 @@
 use std::io::{self, BufRead,BufReader};
 use std::fs::File;
 use std::collections::HashMap;
+use std::path::PathBuf;
 use clap::Parser;
-//use unicode_segmentation::UnicodeSegmentation;
 
 #[derive(Parser, Debug)]
 struct Cli {
@@ -14,29 +14,41 @@ struct Cli {
     lines: bool,
     #[arg(short='m')]
     multibytes: bool,
-    path: std::path::PathBuf
+    path: Vec<std::path::PathBuf>
 }
 
 fn main() -> io::Result<()>{
     let args = Cli::parse();
 
-    let file = File::open(&args.path)?;
-    let mut reader = BufReader::new(file);
+    let mut totals: HashMap<&str, u64> = HashMap::new();
+        totals.insert("bytes", 0);
+        totals.insert("words", 0);
+        totals.insert("lines", 0);
+        totals.insert("multibytes", 0);
 
-    let mut counts: HashMap<&str, u64> = HashMap::new();
-    counts.insert("bytes", 0);
-    counts.insert("words", 0);
-    counts.insert("lines", 0);
-    counts.insert("multibytes", 0);
-    
-    get_counts(&mut counts, &mut reader);
+    for path in &args.path {
+        let file = File::open(&path)?;
+        let mut reader = BufReader::new(file);
 
-    print_report(args, counts);
+        let mut counts: HashMap<&str, u64> = HashMap::new();
+        counts.insert("bytes", 0);
+        counts.insert("words", 0);
+        counts.insert("lines", 0);
+        counts.insert("multibytes", 0);
+        
+        get_counts(&mut counts, &mut reader, &mut totals);
 
+        print_report(&args, counts, path); 
+    }
+
+    if args.path.len() > 1 {
+        print_totals(&args, &mut totals);
+    }
     Ok(())
 }
 
-fn get_counts(counts: &mut HashMap<&str, u64>, reader: &mut BufReader<File>) {
+fn get_counts(counts: &mut HashMap<&str, u64>, reader: &mut BufReader<File>, 
+    totals: &mut HashMap<&str, u64>) {
     let mut line_string = String::new();
 
     while reader.read_line(&mut line_string).unwrap() > 0 {
@@ -61,10 +73,16 @@ fn get_counts(counts: &mut HashMap<&str, u64>, reader: &mut BufReader<File>) {
 
         line_string.clear();
     }
+
+    totals.entry("bytes").and_modify(|k| *k += counts["bytes"]);
+    totals.entry("words").and_modify(|k| *k += counts["words"]);
+    totals.entry("lines").and_modify(|k| *k += counts["lines"]);
+    totals.entry("multibytes").and_modify(|k| *k += counts["multibytes"]);
+
 }
 
 // Function to print results of command
-fn print_report(args: Cli, counts: HashMap<&str, u64>) {
+fn print_report(args: &Cli, counts: HashMap<&str, u64>, file_path: &PathBuf) {
     // Indicates if user entered command with no flags
     let default_option: bool = !(args.bytes || args.lines || args.words 
         || args.multibytes);
@@ -87,7 +105,34 @@ fn print_report(args: Cli, counts: HashMap<&str, u64>) {
         report.push_str(&format!("{:>8}", counts["multibytes"]));
     }
 
-    report.push_str(&format!(" {}", args.path.display()));
+    report.push_str(&format!(" {}", file_path.display()));
+
+    println!("{}", report);
+}
+
+fn print_totals(args: &Cli, totals: &mut HashMap<&str, u64>) {
+    let default_option: bool = !(args.bytes || args.lines || args.words 
+        || args.multibytes);
+
+    let mut report = String::new();
+
+    if default_option || args.lines {
+        report.push_str(&format!("{:>8}", totals["lines"]));
+    }
+    
+    if default_option || args.words {
+        report.push_str(&format!("{:>8}", totals["words"]));
+    }
+
+    if default_option || args.bytes {
+        report.push_str(&format!("{:>8}", totals["bytes"]));
+    }
+
+    if args.multibytes && !args.bytes {
+        report.push_str(&format!("{:>8}", totals["multibytes"]));
+    }
+
+    report.push_str(&" total");
 
     println!("{}", report);
 }
